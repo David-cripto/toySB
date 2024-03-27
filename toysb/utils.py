@@ -17,7 +17,6 @@ def unsqueeze_xdim(z, xdim):
     bc_dim = (...,) + (None,) * len(xdim)
     return z[bc_dim]
 
-
 def make_beta_schedule(n_timestep=1000, linear_start=1e-4, linear_end=2e-2):
     betas = (
         th.linspace(linear_start ** 0.5, linear_end ** 0.5, n_timestep, dtype=th.float64) ** 2
