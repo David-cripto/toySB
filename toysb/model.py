@@ -15,8 +15,8 @@ class SBModel(nn.Module):
                   nn.ReLU(),
                 )
                 self.residual = nn.Identity() if in_dim == out_dim else nn.Linear(in_dim, out_dim)
-            def forward(self, x):
-                return self.model(x) + self.residual(x)
+            def forward(self, x, time):
+                return self.model(x, time) + self.residual(x)
 
         self.layers = nn.Sequential(
             ResBlock(dim, dim * scale),
