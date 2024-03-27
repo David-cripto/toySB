@@ -31,10 +31,11 @@ def get_pair_dataset(n_samples: int, dataset1: str, dataset2: str, logger: Logge
 
     if path_to_save is not None:
         path_to_save = Path(path_to_save)
-        th.save(samples1, path_to_save / "samples1.th")
-        logger.info(f"[Dataset] Save {dataset1} to {path_to_save / "samples1.th"}")
-        th.save(samples2, path_to_save / "samples2.th")
-        logger.info(f"[Dataset] Save {dataset2} to {path_to_save / "samples2.th"}")
+        path1, path2 = str(path_to_save / "samples1.th"), str(path_to_save / "samples2.th")
+        th.save(samples1, path1)
+        logger.info(f"[Dataset] Save {dataset1} to {path1}")
+        th.save(samples2, path2)
+        logger.info(f"[Dataset] Save {dataset2} to {path2}")
 
     class PairDataset(Dataset):
         def __init__(self):
@@ -46,7 +47,6 @@ def get_pair_dataset(n_samples: int, dataset1: str, dataset2: str, logger: Logge
         
         def __getitem__(self, index):
             return self.samples1[index], self.samples2[index]
-        
-    logger.info(f"[Dataset] Built {dataset1} and {dataset2} datasets, size={len(dataset1)}!")
+    logger.info(f"[Dataset] Built {dataset1} and {dataset2} datasets, size={len(samples1)}!")
     return PairDataset(), dim
 

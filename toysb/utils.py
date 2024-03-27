@@ -1,6 +1,5 @@
 import torch as th
 from torch.optim import AdamW, lr_scheduler
-from .scheduler import Scheduler
 import torch.nn.functional as F
 from torch_ema import ExponentialMovingAverage
 import os
@@ -67,9 +66,10 @@ class TensorBoardWriter:
     def close(self):
         self.writer.close()
 
-def train(opt, net, scheduler: Scheduler, train_dataloader, logger):
+def train(opt, net, scheduler, train_dataloader, logger):
     writer = TensorBoardWriter(opt)
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
+    noise_levels = th.linspace(opt.t0, opt.T, opt.num_steps, device=opt.device) * opt.num_steps
 
     ema.to(opt.device)
     net.to(opt.device)
@@ -85,7 +85,7 @@ def train(opt, net, scheduler: Scheduler, train_dataloader, logger):
             step = th.randint(0, opt.num_steps, (x0.shape[0],))
             xt = scheduler.q_sample(step, x0, x1)
             eps_true = scheduler.compute_label(step, x0, xt)
-            eps_pred = net(xt, step)
+            eps_pred = net(xt, noise_levels[step].detach())
 
             loss = F.mse_loss(eps_pred, eps_true)
             loss.backward()
@@ -95,7 +95,7 @@ def train(opt, net, scheduler: Scheduler, train_dataloader, logger):
 
         logger.info("train_it {}/{} | lr:{} | loss:{}".format(
                     1+it,
-                    opt.num_itr,
+                    opt.num_epoch,
                     "{:.2e}".format(optimizer.param_groups[0]['lr']),
                     "{:+.4f}".format(loss.item()),
                 ))

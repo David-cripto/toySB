@@ -46,5 +46,5 @@ class SBModel(nn.Module):
         )
     
     def forward(self, x, time):
-        timestep_embed = self.timestep_embed(time[: None])
+        timestep_embed = self.timestep_embed(time[:, None])
         return self.layers(th.cat([x, timestep_embed], dim=1))

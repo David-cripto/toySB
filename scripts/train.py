@@ -20,6 +20,7 @@ def create_arguments():
     parser.add_argument("--ckpt_path", type=Path, default="", help="path to save checkpoints")
     parser.add_argument("--gpu", type=int, default=None, help="choose a particular device")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
+    parser.add_argument("--num_epoch", type=int, default=100, help="number of epochs")
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=5e-5, help="learning rate")
@@ -27,6 +28,8 @@ def create_arguments():
     parser.add_argument("--lr-step", type=int, default=1000, help="learning rate decay step size")
     parser.add_argument("--lr-gamma", type=float, default=0.99, help="learning rate decay ratio")
     parser.add_argument("--ema", type=float, default=0.99)
+    parser.add_argument("--t0", type=float, default=1e-4, help="start time in network parametrization")
+    parser.add_argument("--T", type=float, default=1., help="end time in network parametrization")
 
     opt = parser.parse_args()
 
