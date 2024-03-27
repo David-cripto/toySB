@@ -2,7 +2,7 @@ import torch as th
 from torch import nn
 
 
-class SB(nn.Module):
+class SBModel(nn.Module):
     def __init__(self, dim: int, scale: int = 32, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         class ResBlock(nn.Module):
@@ -32,5 +32,5 @@ class SB(nn.Module):
             ResBlock(dim * scale, dim),
         )
     
-    def forward(self, x):
-        return self.layers(x)
+    def forward(self, x, time):
+        return self.layers(x, time)

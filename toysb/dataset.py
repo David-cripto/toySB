@@ -28,8 +28,8 @@ def get_pair_dataset(n_samples: int, dataset1: str, dataset2: str, transforms = 
 
     if path_to_save is not None:
         path_to_save = Path(path_to_save)
-        th.save(samples1, path_to_save / "samples1.npy")
-        th.save(samples2, path_to_save / "samples2.npy")
+        th.save(samples1, path_to_save / "samples1.th")
+        th.save(samples2, path_to_save / "samples2.th")
 
     class PairDataset(Dataset):
         def __init__(self):
@@ -42,6 +42,5 @@ def get_pair_dataset(n_samples: int, dataset1: str, dataset2: str, transforms = 
         def __getitem__(self, index):
             return self.samples1[index], self.samples2[index]
     
-    return PairDataset(transforms)
-
+    return PairDataset()
 
