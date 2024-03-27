@@ -28,7 +28,7 @@ class Scheduler():
         std_fwd = self.std_fwd[step]
         return std_fwd if xdim is None else unsqueeze_xdim(std_fwd, xdim)
 
-    def q_sample(self, step, x0, x1, ot_ode=False):
+    def q_sample(self, step, x0, x1):
         """ Sample q(x_t | x_0, x_1), i.e. eq 11 """
 
         assert x0.shape == x1.shape
@@ -39,11 +39,10 @@ class Scheduler():
         std_sb = unsqueeze_xdim(self.std_sb[step], xdim)
 
         xt = mu_x0 * x0 + mu_x1 * x1
-        if not ot_ode:
-            xt = xt + std_sb * torch.randn_like(xt)
+        xt = xt + std_sb * torch.randn_like(xt)
         return xt.detach()
 
-    def p_posterior(self, nprev, n, x_n, x0, ot_ode=False):
+    def p_posterior(self, nprev, n, x_n, x0):
         """ Sample p(x_{nprev} | x_n, x_0), i.e. eq 4"""
 
         assert nprev < n
@@ -54,12 +53,12 @@ class Scheduler():
         mu_x0, mu_xn, var = compute_gaussian_product_coef(std_nprev, std_delta)
 
         xt_prev = mu_x0 * x0 + mu_xn * x_n
-        if not ot_ode and nprev > 0:
+        if nprev > 0:
             xt_prev = xt_prev + var.sqrt() * torch.randn_like(xt_prev)
 
         return xt_prev
 
-    def ddpm_sampling(self, steps, pred_x0_fn, x1, ot_ode=False, log_steps=None, verbose=True):
+    def ddpm_sampling(self, steps, pred_x0_fn, x1, log_steps=None, verbose=True):
         xt = x1.detach().to(self.device)
 
         xs = []
@@ -76,7 +75,7 @@ class Scheduler():
             assert prev_step < step, f"{prev_step=}, {step=}"
 
             pred_x0 = pred_x0_fn(xt, step)
-            xt = self.p_posterior(prev_step, step, xt, pred_x0, ot_ode=ot_ode)
+            xt = self.p_posterior(prev_step, step, xt, pred_x0)
 
             if prev_step in log_steps:
                 pred_x0s.append(pred_x0.detach().cpu())
