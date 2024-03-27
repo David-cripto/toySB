@@ -37,7 +37,7 @@ def build_optimizer_sched(opt, net, log):
 
     return optimizer, sched
 
-def train(opt, net, scheduler: Scheduler, train_dataloader, test_dataloader):
+def train(opt, net, scheduler: Scheduler, train_dataloader):
     net.train()
 
     for it in range(opt.num_epoch):
