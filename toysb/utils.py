@@ -81,15 +81,18 @@ def compute_pred_x0(step, xt, net_out, scheduler):
     pred_x0 = xt - std_fwd * net_out
     return pred_x0
 
-def visualize(xs, log_steps):
+def visualize(xs, x0, log_steps):
     import matplotlib.pyplot as plt
 
-    fig, axs = plt.subplots(1, xs.shape[1], figsize = (20, 10))
+    fig, axs = plt.subplots(1, xs.shape[1] + 1, figsize = (20, 10))
+    
+    axs[0].scatter(x0[:, 0], x0[:, 1], c = list(range(len(x0))))
+    axs[0].set_title(f"True labels")
 
-    for ind in range(xs.shape[1]):
-        points_t = xs[:, ind, :]
-        axs[ind].scatter(points_t[:, 0], points_t[:, 1])
-        axs[ind].set_title(f"Points at time {log_steps[ind]}")
+    for ind in range(1, xs.shape[1] + 1):
+        points_t = xs[:, ind - 1, :]
+        axs[ind].scatter(points_t[:, 0], points_t[:, 1], c = list(range(len(points_t))))
+        axs[ind].set_title(f"Points at time {log_steps[ind - 1]}")
 
     return fig
 
@@ -115,7 +118,7 @@ def evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer):
             return compute_pred_x0(step, xt, out, scheduler)
         
         xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, log_steps=log_steps, verbose=True)
-    figure = visualize(xs, log_steps)
+    figure = visualize(xs, x0, log_steps)
     writer.add_figure(it, "log images", figure)
 
 def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
