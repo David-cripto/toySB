@@ -61,7 +61,7 @@ class Scheduler():
     def ddpm_sampling(self, steps, pred_x0_fn, x1, log_steps=None, verbose=True):
         xt = x1.detach().to(self.device)
 
-        xs = []
+        xs = [xt.cpu()]
         pred_x0s = []
 
         log_steps = log_steps or steps

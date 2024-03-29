@@ -25,12 +25,17 @@ def get_dataset(n_samples, name_dataset):
 
     return init_sample, dim
 
-def get_pair_dataset(n_samples: int, dataset1: str, dataset2: str, logger: Logger, transforms = None, path_to_save: PathLike = None):
+def get_pair_dataset(
+        n_samples: int, dataset1: str, dataset2: str, 
+        logger: Logger, transforms = None, 
+        path_to_save: PathLike = None, regime: str = "train"
+        ):
     samples1, dim = get_dataset(n_samples, dataset1)
     samples2, dim = get_dataset(n_samples, dataset2)
 
     if path_to_save is not None:
-        path_to_save = Path(path_to_save)
+        path_to_save = Path(path_to_save) / regime
+        path_to_save.mkdir(exist_ok=True)
         path1, path2 = str(path_to_save / "samples1.th"), str(path_to_save / "samples2.th")
         th.save(samples1, path1)
         logger.info(f"[Dataset] Save {dataset1} to {path1}")

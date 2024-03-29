@@ -45,14 +45,21 @@ def build_optimizer_sched(opt, net, logger):
 
     return optimizer, sched
 
-def sample_batch(opt, loader):
-    x0, x1= next(loader)
-    x0 = x0.detach().to(opt.device)
-    x1 = x1.detach().to(opt.device)
+def space_indices(num_steps, count):
+    assert count <= num_steps
 
-    assert x0.shape == x1.shape
+    if count <= 1:
+        frac_stride = 1
+    else:
+        frac_stride = (num_steps - 1) / (count - 1)
 
-    return x0, x1
+    cur_idx = 0.0
+    taken_steps = []
+    for _ in range(count):
+        taken_steps.append(round(cur_idx))
+        cur_idx += frac_stride
+
+    return taken_steps
 
 class TensorBoardWriter:
     def __init__(self, opt):
@@ -63,10 +70,55 @@ class TensorBoardWriter:
     def add_scalar(self, global_step, key, val):
         self.writer.add_scalar(key, val, global_step=global_step)
 
+    def add_figure(self, global_step, key, val):
+        self.writer.add_figure(key, val, global_step=global_step)
+
     def close(self):
         self.writer.close()
 
-def train(opt, net, scheduler, train_dataloader, logger):
+def compute_pred_x0(step, xt, net_out, scheduler):
+    std_fwd = scheduler.get_std_fwd(step, xdim=xt.shape[1:])
+    pred_x0 = xt - std_fwd * net_out
+    return pred_x0
+
+def visualize(xs, log_steps):
+    import matplotlib.pyplot as plt
+
+    fig, axs = plt.subplots(1, xs.shape[1], figsize = (20, 10))
+
+    for ind in range(xs.shape[1]):
+        points_t = xs[:, ind, :]
+        axs[ind].scatter(points_t[:, 0], points_t[:, 1])
+        axs[ind].set_title(f"Points at time {log_steps[ind]}")
+
+    return fig
+
+@th.no_grad()
+def evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer):
+    logger.info(f"Evaluation started: iter={it}")
+
+    steps = th.arange(opt.num_steps).tolist()
+    log_steps = space_indices(opt.num_steps, opt.log_count)
+
+    for x0, x1 in val_dataloader:
+        break
+
+    x1 = x1.detach().to(opt.device)
+    
+    
+    with ema.average_parameters():
+        net.eval()
+
+        def pred_x0_fn(xt, step):
+            step = th.full((xt.shape[0],), step, device=opt.device, dtype=th.long)
+            out = net(xt, step)
+            return compute_pred_x0(step, xt, out, scheduler)
+        
+        xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, log_steps=log_steps, verbose=True)
+    figure = visualize(xs, log_steps)
+    writer.add_figure(it, "log images", figure)
+
+def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     writer = TensorBoardWriter(opt)
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
     noise_levels = th.linspace(opt.t0, opt.T, opt.num_steps, device=opt.device) * opt.num_steps
@@ -77,7 +129,7 @@ def train(opt, net, scheduler, train_dataloader, logger):
     optimizer, sched = build_optimizer_sched(opt, net, logger)
 
     net.train()
-
+    
     for it in range(opt.num_epoch):
         for x0, x1 in train_dataloader:
             optimizer.zero_grad()
@@ -92,14 +144,20 @@ def train(opt, net, scheduler, train_dataloader, logger):
             optimizer.step()
             ema.update()
             if sched is not None: sched.step()
-
         logger.info("train_it {}/{} | lr:{} | loss:{}".format(
                     1+it,
                     opt.num_epoch,
                     "{:.2e}".format(optimizer.param_groups[0]['lr']),
                     "{:+.4f}".format(loss.item()),
                 ))
-        writer.add_scalar(it, 'loss', loss.detach())
+        if it % 5 == 0:
+            writer.add_scalar(it, 'loss', loss.detach())
+
+        if it % 10 == 0: # 0, 0.5k, 3k, 6k 9k
+            net.eval()
+            evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer)
+            net.train()
+
         th.save({
                     "net": net.state_dict(),
                     "ema": ema.state_dict(),
