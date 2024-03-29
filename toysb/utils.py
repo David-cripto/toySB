@@ -116,8 +116,7 @@ def evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer):
             step = th.full((xt.shape[0],), step, device=opt.device, dtype=th.long)
             out = net(xt, step)
             return compute_pred_x0(step, xt, out, scheduler)
-        
-        xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, log_steps=log_steps, verbose=True)
+        xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
     figure = visualize(xs, x0, log_steps)
     writer.add_figure(it, "log images", figure)
 
