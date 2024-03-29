@@ -8,3 +8,6 @@ The arrow indicates the forward process of transferring one data distribution $p
 |     Datasets     | Model |
 |:----------------:|:-----:|
 | S_curve -> Swiss |  [link](https://drive.google.com/drive/folders/1obJa-SKdpDfR8DICaB3LekpL0-k-bXfO?usp=sharing) |
+
+Example of the trained model:
+![image](https://github.com/David-cripto/toySB/assets/trained_SB.jpg)
