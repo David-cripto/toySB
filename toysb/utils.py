@@ -7,6 +7,15 @@ from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+IMAGE_CONSTANTS = {
+    "scale_vel":1,
+    "width":0.002,
+    "color_vel":"#BB8FCE",
+    "x_range":(-15,15),
+    "y_range":(-15,15),
+    "figsize":(20,10)
+}
+
 def compute_gaussian_product_coef(sigma1, sigma2):
     """ Given p1 = N(x_t|x_0, sigma_1**2) and p2 = N(x_t|x_1, sigma_2**2)
         return p1 * p2 = N(x_t| coef1 * x0 + coef2 * x1, var) """
@@ -96,13 +105,23 @@ def visualize(xs, x0, log_steps):
 
     return fig
 
-def save_imgs(xs, log_steps, path_to_save):
+def save_imgs(xs, log_steps, path_to_save, opt):
+    colors = list(range(len(xs)))
+
     path_to_save = Path(path_to_save)
+    if opt.vel: vel = (xs[:, :-1, :] - xs[:, 1:, :])
+
     for ind in range(xs.shape[1]):
-        plt.figure(figsize = (20, 10))
+        plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
         points_t = xs[:, ind, :]
-        plt.scatter(points_t[:, 0], points_t[:, 1], c = list(range(len(points_t))))
+        plt.scatter(points_t[:, 0], points_t[:, 1], c = colors)
         plt.title(f"Points at time {log_steps[ind]}")
+        if opt.vel and ind != 0:
+            plt.quiver(points_t[:, 0], points_t[:, 1], vel[:, ind - 1, 0], vel[:, ind - 1, 1], angles='xy', scale_units='xy', scale=IMAGE_CONSTANTS["scale_vel"], 
+                       label = "True velocity", width =IMAGE_CONSTANTS["width"], color = IMAGE_CONSTANTS["color_vel"])
+        plt.legend()
+        plt.xlim(*IMAGE_CONSTANTS["x_range"])
+        plt.ylim(*IMAGE_CONSTANTS["y_range"])
         plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
 
 @th.no_grad()
@@ -126,7 +145,7 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
         xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
 
     if path_to_save is not None:
-        save_imgs(xs, log_steps, path_to_save)
+        save_imgs(xs, log_steps, path_to_save, opt)
 
     figure = visualize(xs, x0, log_steps)
 
