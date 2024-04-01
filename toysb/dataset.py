@@ -55,3 +55,21 @@ def get_pair_dataset(
     logger.info(f"[Dataset] Built {dataset1} and {dataset2} datasets, size={len(samples1)}!")
     return PairDataset(), dim
 
+def load_dataset(path_to_dataset: PathLike, logger: Logger, transforms = None):
+    logger.info(f"[Dataset] Load dataset from {path_to_dataset}")
+    dataset = th.load(path_to_dataset)
+
+    dim = dataset.shape[1]
+
+    class PairDataset(Dataset):
+        def __init__(self):
+            self.samples = transforms(dataset) if transforms is not None else dataset
+
+        def __len__(self):
+            return len(self.samples)
+        
+        def __getitem__(self, index):
+            return self.samples[index], self.samples[index]
+    
+    return PairDataset(), dim
+

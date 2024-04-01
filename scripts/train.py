@@ -1,12 +1,8 @@
-from toysb.utils import train
-from toysb.model import SBModel
-from toysb.scheduler import Scheduler
+from toysb import train, get_pair_dataset, SBModel, Scheduler, Logger
 import argparse
 from torch.utils.data import DataLoader
 from pathlib import Path
-from toysb.logger import Logger
 from toysb.utils import create_symmetric_beta_schedule
-from toysb.dataset import get_pair_dataset
 import os
 
 def create_arguments():

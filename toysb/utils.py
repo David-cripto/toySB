@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from torch_ema import ExponentialMovingAverage
 import os
 from torch.utils.tensorboard import SummaryWriter
+import matplotlib.pyplot as plt
+from pathlib import Path
 
 def compute_gaussian_product_coef(sigma1, sigma2):
     """ Given p1 = N(x_t|x_0, sigma_1**2) and p2 = N(x_t|x_1, sigma_2**2)
@@ -82,8 +84,6 @@ def compute_pred_x0(step, xt, net_out, scheduler):
     return pred_x0
 
 def visualize(xs, x0, log_steps):
-    import matplotlib.pyplot as plt
-
     fig, axs = plt.subplots(1, xs.shape[1] + 1, figsize = (20, 10))
     
     axs[0].scatter(x0[:, 0], x0[:, 1], c = list(range(len(x0))))
@@ -96,10 +96,17 @@ def visualize(xs, x0, log_steps):
 
     return fig
 
-@th.no_grad()
-def evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer):
-    logger.info(f"Evaluation started: iter={it}")
+def save_imgs(xs, log_steps, path_to_save):
+    path_to_save = Path(path_to_save)
+    for ind in range(xs.shape[1]):
+        plt.figure(figsize = (20, 10))
+        points_t = xs[:, ind, :]
+        plt.scatter(points_t[:, 0], points_t[:, 1], c = list(range(len(points_t))))
+        plt.title(f"Points at time {log_steps[ind]}")
+        plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
 
+@th.no_grad()
+def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
     steps = th.arange(opt.num_steps).tolist()
     log_steps = space_indices(opt.num_steps, opt.log_count)
 
@@ -117,8 +124,14 @@ def evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer):
             out = net(xt, step)
             return compute_pred_x0(step, xt, out, scheduler)
         xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
+
+    if path_to_save is not None:
+        save_imgs(xs, log_steps, path_to_save)
+
     figure = visualize(xs, x0, log_steps)
-    writer.add_figure(it, "log images", figure)
+
+    return figure
+    
 
 def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     writer = TensorBoardWriter(opt)
@@ -157,7 +170,9 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
 
         if it % 10 == 0: # 0, 0.5k, 3k, 6k 9k
             net.eval()
-            evaluation(opt, it, val_dataloader, net, ema, scheduler, logger, writer)
+            logger.info(f"Evaluation started: iter={it}")
+            figure = sampling(opt, it, val_dataloader, net, ema, scheduler, logger, writer)
+            writer.add_figure(it, "log images", figure)
             net.train()
 
         th.save({
@@ -168,3 +183,15 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
                 }, opt.ckpt_path / "latest.pt")
         logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
     writer.close()
+
+def load_from_ckpt(net, opt, logger):
+    checkpoint = th.load(opt.ckpt_path, map_location="cpu")
+    net.load_state_dict(checkpoint['net'])
+    logger.info(f"[Net] Loaded network ckpt: {opt.ckpt_path}!")
+    ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
+    ema.load_state_dict(checkpoint["ema"])
+    logger.info(f"[Ema] Loaded ema ckpt: {opt.ckpt_path}!")
+    
+    net.to(opt.device)
+    ema.to(opt.device)
+    return net, ema
