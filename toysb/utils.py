@@ -195,3 +195,10 @@ def load_from_ckpt(net, opt, logger):
     net.to(opt.device)
     ema.to(opt.device)
     return net, ema
+
+def save_gif(path_to_imgs, path_to_save, range_list):
+    import imageio
+
+    path_to_imgs = Path(path_to_imgs)
+    images = [imageio.imread(str(path_to_imgs / f"{i}.png")) for i in range_list]
+    imageio.mimsave(path_to_save, images)
