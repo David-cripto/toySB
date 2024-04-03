@@ -128,11 +128,10 @@ class Scheduler():
                 return self._sampling_eps
 
             def psi(self, t_start, t_end):
-                return 1
+                return jnp.ones_like(t_start)
             
             def eps_integrand(self, vec_t):
-                fwd_sigma_t = self.std_fwd_interpol(vec_t)
-                integrand = self.betas_interpol(vec_t)/fwd_sigma_t
+                integrand = self.betas_interpol(vec_t)/self.std_fwd_interpol(vec_t)
                 return integrand
 
         sde = VESDE(self.betas, self.std_fwd, self.std_bwd)
