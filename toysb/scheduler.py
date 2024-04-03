@@ -3,11 +3,7 @@ from .utils import compute_gaussian_product_coef, unsqueeze_xdim
 from functools import partial
 import torch
 from tqdm import tqdm
-
-import sys
-
-sys.path.append("/cache/david/I2SB/exp_integrator/deis")
-import th_deis as deis
+import deis.th_deis as deis
 
 class Scheduler():
     def __init__(self, betas, device):
