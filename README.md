@@ -10,4 +10,4 @@ The arrow indicates the forward process of transferring one data distribution $p
 | S_curve -> Swiss |  [link](https://drive.google.com/drive/folders/1obJa-SKdpDfR8DICaB3LekpL0-k-bXfO?usp=sharing) |
 
 Example of the trained model:
-![image](/assets/trained_SB.jpg)
+![image](/assets/trained_SB.gif)
