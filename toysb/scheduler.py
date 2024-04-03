@@ -89,7 +89,7 @@ class Scheduler():
         stack_bwd_traj = lambda z: torch.flip(torch.stack(z, dim=1), dims=(1,))
         return stack_bwd_traj(xs), stack_bwd_traj(pred_x0s)
     
-    def exp_sampling(self, steps, pred_eps_fn, x1, log_steps=None):
+    def exp_sampling(self, steps, pred_eps_fn, x1, log_steps=None, ab_order = 0):
         import jax.numpy as jnp
 
         xt = x1.detach().to(self.device)
@@ -118,7 +118,6 @@ class Scheduler():
 
             @property
             def is_continuous(self):
-                """continuous model by default"""
                 return False
             @property
             def sampling_T(self):
@@ -147,7 +146,7 @@ class Scheduler():
             num_step=num_steps,
             # deis choice
             method = "t_ab", # deis sampling algorithms: support "rho_rk", "rho_ab", "t_ab", "ipndm"
-            ab_order= 0, # greater than 0, used for "rho_ab", "t_ab" algorithms, other algorithms will ignore the arg
+            ab_order= ab_order, # greater than 0, used for "rho_ab", "t_ab" algorithms, other algorithms will ignore the arg
             rk_method="3kutta" # used for "rho_rk" algorithms, other algorithms will ignore the arg
         )
         xs = sampler_fn(xt)

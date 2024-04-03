@@ -153,7 +153,7 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
                 vec_t = th.full((xt.shape[0],), scalar_t, device=xt.device, dtype=th.long)
                 out = net(xt, vec_t)
                 return out
-            exp_int_xs, pred_x0 = scheduler.exp_sampling(steps, pred_eps_fn, x1, log_steps=log_steps)
+            exp_int_xs, pred_x0 = scheduler.exp_sampling(steps, pred_eps_fn, x1, log_steps=log_steps, ab_order = opt.ab_order)
 
             velocity_dict["Exponential integrator velocity"] = {"vel" : exp_int_xs[:, :-1, :] - exp_int_xs[:, 1:, :], "color" : "#CA6F1E"}
 
