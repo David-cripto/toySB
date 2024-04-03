@@ -4,6 +4,11 @@ from functools import partial
 import torch
 from tqdm import tqdm
 
+import sys
+
+sys.path.append("/cache/david/I2SB/exp_integrator/deis")
+import th_deis as deis
+
 class Scheduler():
     def __init__(self, betas, device):
 
@@ -84,6 +89,72 @@ class Scheduler():
         stack_bwd_traj = lambda z: torch.flip(torch.stack(z, dim=1), dims=(1,))
         return stack_bwd_traj(xs), stack_bwd_traj(pred_x0s)
     
+    def exp_sampling(self, steps, pred_eps_fn, x1, log_steps=None):
+        import jax.numpy as jnp
+
+        xt = x1.detach().to(self.device)
+
+        xs = []
+        pred_x0s = []
+
+        log_steps = log_steps or steps
+        assert steps[0] == log_steps[0] == 0
+
+        num_steps = len(steps) - 1
+        
+        class VESDE:
+            def __init__(self, betas, std_fwd, std_bwd, sampling_eps = 0, sampling_T = 999):
+                self._sampling_eps = sampling_eps
+                self._sampling_T = sampling_T
+                betas = jnp.array(betas.cpu().numpy())
+                std_fwd = jnp.array(std_fwd.cpu().numpy())
+                std_bwd = jnp.array(std_bwd.cpu().numpy())
+                j_times = jnp.asarray(
+                    jnp.arange(len(betas)), dtype=float
+                )
+                self.betas_interpol = deis.vpsde.get_interp_fn(j_times, betas)
+                self.std_fwd_interpol = deis.vpsde.get_interp_fn(j_times, std_fwd)
+                self.std_bwd_interpol = deis.vpsde.get_interp_fn(j_times, std_bwd)
+
+            @property
+            def is_continuous(self):
+                """continuous model by default"""
+                return False
+            @property
+            def sampling_T(self):
+                return self._sampling_T
+
+            @property
+            def sampling_eps(self):
+                return self._sampling_eps
+
+            def psi(self, t_start, t_end):
+                return 1
+            
+            def eps_integrand(self, vec_t):
+                fwd_sigma_t = self.std_fwd_interpol(vec_t)
+                integrand = self.betas_interpol(vec_t)/fwd_sigma_t
+                return integrand
+
+        sde = VESDE(self.betas, self.std_fwd, self.std_bwd)
+        sampler_fn = deis.get_sampler(
+            # args for diffusion model
+            sde,
+            pred_eps_fn,
+            # args for timestamps scheduling
+            ts_phase="t", # support "rho", "t", "log"
+            ts_order=1.0,
+            num_step=num_steps,
+            # deis choice
+            method = "t_ab", # deis sampling algorithms: support "rho_rk", "rho_ab", "t_ab", "ipndm"
+            ab_order= 0, # greater than 0, used for "rho_ab", "t_ab" algorithms, other algorithms will ignore the arg
+            rk_method="3kutta" # used for "rho_rk" algorithms, other algorithms will ignore the arg
+        )
+        xs = sampler_fn(xt)
+        xs = [xs[ind] for ind in log_steps]
+        stack_bwd_traj = lambda z: torch.flip(torch.stack(z, dim=1), dims=(1,))
+        return stack_bwd_traj(xs), None
+
     def compute_label(self, step, x0, xt):
         std_fwd = self.get_std_fwd(step, xdim=x0.shape[1:])
         label = (xt - x0) / std_fwd

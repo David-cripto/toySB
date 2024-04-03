@@ -8,9 +8,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 IMAGE_CONSTANTS = {
-    "scale_vel":1,
+    "scale":1,
     "width":0.002,
-    "color_vel":"#BB8FCE",
     "x_range":(-15,15),
     "y_range":(-15,15),
     "figsize":(20,10)
@@ -105,20 +104,23 @@ def visualize(xs, x0, log_steps):
 
     return fig
 
-def save_imgs(xs, log_steps, path_to_save, opt):
+def save_imgs(xs, log_steps, path_to_save, velocity_dict):
     colors = list(range(len(xs)))
 
     path_to_save = Path(path_to_save)
-    if opt.vel: vel = (xs[:, :-1, :] - xs[:, 1:, :])
 
     for ind in range(xs.shape[1]):
         plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
         points_t = xs[:, ind, :]
         plt.scatter(points_t[:, 0], points_t[:, 1], c = colors)
         plt.title(f"Points at time {log_steps[ind]}")
-        if opt.vel and ind != 0:
-            plt.quiver(points_t[:, 0], points_t[:, 1], vel[:, ind - 1, 0], vel[:, ind - 1, 1], angles='xy', scale_units='xy', scale=IMAGE_CONSTANTS["scale_vel"], 
-                       label = "True velocity", width =IMAGE_CONSTANTS["width"], color = IMAGE_CONSTANTS["color_vel"])
+        if ind != 0:
+            for name, vel in velocity_dict.items():
+                plt.quiver(points_t[:, 0], points_t[:, 1], vel["vel"][:, ind - 1, 0], vel["vel"][:, ind - 1, 1], 
+                           angles='xy', scale_units='xy', scale=IMAGE_CONSTANTS["scale"], 
+                           label = name, width =IMAGE_CONSTANTS["width"], color = vel["color"],
+                           alpha = 0.3)
+        
         plt.legend()
         plt.xlim(*IMAGE_CONSTANTS["x_range"])
         plt.ylim(*IMAGE_CONSTANTS["y_range"])
@@ -134,6 +136,7 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
 
     x1 = x1.detach().to(opt.device)
     
+    velocity_dict = {}
     
     with ema.average_parameters():
         net.eval()
@@ -143,9 +146,19 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
             out = net(xt, step)
             return compute_pred_x0(step, xt, out, scheduler)
         xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
+        if opt.vel:
+            velocity_dict["True velocity"] = {"vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#BB8FCE"}
+        if opt.exp_int_vel:
+            def pred_eps_fn(xt, scalar_t):
+                vec_t = th.full((xt.shape[0],), scalar_t, device=xt.device, dtype=th.long)
+                out = net(xt, vec_t)
+                return out
+            exp_int_xs, pred_x0 = scheduler.exp_sampling(steps, pred_eps_fn, x1, log_steps=log_steps)
+
+            velocity_dict["Exponential integrator velocity"] = {"vel" : exp_int_xs[:, :-1, :] - exp_int_xs[:, 1:, :], "color" : "#CA6F1E"}
 
     if path_to_save is not None:
-        save_imgs(xs, log_steps, path_to_save, opt)
+        save_imgs(xs, log_steps, path_to_save, velocity_dict)
 
     figure = visualize(xs, x0, log_steps)
 

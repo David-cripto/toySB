@@ -16,6 +16,7 @@ def create_arguments():
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE model")
     parser.add_argument("--vel", action="store_true", help="draw velocity of motion")
     parser.add_argument("--ot_vel", action="store_true", help="draw ot_ode velocity of motion")
+    parser.add_argument("--exp_int_vel", action="store_true", help="draw exponential integrator velocity of motion")
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--ema", type=float, default=0.99)
