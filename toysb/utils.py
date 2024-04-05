@@ -173,22 +173,23 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
     with ema.average_parameters():
         net.eval()
 
-        def pred_x0_fn(xt, step):
-            step = th.full((xt.shape[0],), step, device=opt.device, dtype=th.long)
-            out = net(xt, step)
-            return compute_pred_x0(step, xt, out, scheduler)
-        xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
-        if opt.vel:
-            velocity_dict["True velocity"] = {"vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#BB8FCE"}
-        if opt.exp_int_vel:
+        if opt.exp_int_vel or opt.exp_int:
             def pred_eps_fn(xt, scalar_t):
                 vec_t = th.full((xt.shape[0],), scalar_t, device=xt.device, dtype=th.long)
                 out = net(xt, vec_t)
                 return out
-            exp_int_xs, pred_x0 = scheduler.exp_sampling(steps, pred_eps_fn, x1, log_steps=log_steps, ab_order = opt.ab_order)
+            xs, pred_x0 = scheduler.exp_sampling(steps, pred_eps_fn, x1, log_steps=log_steps, ab_order = opt.ab_order)
 
-            velocity_dict["Exponential integrator velocity"] = {"vel" : exp_int_xs[:, :-1, :] - exp_int_xs[:, 1:, :], "color" : "#CA6F1E"}
-
+            velocity_dict["Exponential integrator velocity"] = {"vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#CA6F1E"}
+        else:
+            def pred_x0_fn(xt, step):
+                step = th.full((xt.shape[0],), step, device=opt.device, dtype=th.long)
+                out = net(xt, step)
+                return compute_pred_x0(step, xt, out, scheduler)
+            xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=opt.ot_ode, log_steps=log_steps, verbose=True)
+            if opt.vel:
+                velocity_dict["True velocity"] = {"vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#BB8FCE"}
+        
     if path_to_save is not None:
         if len(xs.shape) <= 3:
             save_imgs2d(xs, log_steps, path_to_save, velocity_dict)
