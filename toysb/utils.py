@@ -116,7 +116,7 @@ def visualize(xs, x0, log_steps):
         axs[j, 0].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
         for i, img in enumerate(batch):
             img = img.detach()
-            img = torchvision.transforms.functional.to_pil_image(img)
+            img = torchvision.transforms.functional.to_pil_image((img + 1)/2)
             axs[j, i + 1].imshow(np.asarray(img))
             axs[j, i + 1].set_title(f"Time = {log_steps[i]}")
             axs[j, i + 1].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
@@ -152,7 +152,7 @@ def save_imgs(xs, log_steps, path_to_save):
 
         for num_timestep, image in enumerate(batch):
             plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
-            plt.imshow(torchvision.transforms.functional.to_pil_image(image))
+            plt.imshow(torchvision.transforms.functional.to_pil_image((image + 1)/2))
             plt.axis("off")
             plt.title(f"Time = {log_steps[num_timestep]}")
             plt.savefig(str(path_to_dir / f"{log_steps[num_timestep]}.png"))
@@ -160,8 +160,8 @@ def save_imgs(xs, log_steps, path_to_save):
 
 @th.no_grad()
 def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
-    steps = th.arange(opt.num_steps).tolist()
-    log_steps = space_indices(opt.num_steps, opt.log_count)
+    steps = space_indices(opt.num_steps, opt.nfe)
+    log_steps = [steps[i] for i in space_indices(len(steps), opt.log_count)]
 
     for x0, x1 in val_dataloader:
         break

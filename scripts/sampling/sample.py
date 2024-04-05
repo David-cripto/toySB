@@ -25,6 +25,7 @@ def create_arguments():
     parser.add_argument("--c_in", type=int, default=3, help="in channels")
     parser.add_argument("--val_log", type=int, default=10, help="number of points to log from validation dataset")
     parser.add_argument("--image_size", type=int, default=28, help="image size")
+    parser.add_argument("--nfe", type=int, default=20, help="number of fucntion evaluations")
 
     opt = parser.parse_args()
 
