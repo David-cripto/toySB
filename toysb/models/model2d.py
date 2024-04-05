@@ -36,7 +36,7 @@ class MLP(nn.Module):
             x = self.activation_fn(x)
         return x
 
-class SBModel(nn.Module):
+class SB2D(nn.Module):
     def __init__(self, encoder_layers=[16], pos_dim=16, decoder_layers=[128,128], x_dim=2):
         super().__init__()
         self.temb_dim = pos_dim

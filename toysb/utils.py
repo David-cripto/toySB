@@ -6,6 +6,7 @@ import os
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 from pathlib import Path
+import torchvision
 
 IMAGE_CONSTANTS = {
     "scale":1,
@@ -91,7 +92,7 @@ def compute_pred_x0(step, xt, net_out, scheduler):
     pred_x0 = xt - std_fwd * net_out
     return pred_x0
 
-def visualize(xs, x0, log_steps):
+def visualize2d(xs, x0, log_steps):
     fig, axs = plt.subplots(1, xs.shape[1] + 1, figsize = (20, 10))
     
     axs[0].scatter(x0[:, 0], x0[:, 1], c = list(range(len(x0))))
@@ -102,6 +103,23 @@ def visualize(xs, x0, log_steps):
         axs[ind].scatter(points_t[:, 0], points_t[:, 1], c = list(range(len(points_t))))
         axs[ind].set_title(f"Points at time {log_steps[ind - 1]}")
 
+    return fig
+
+def visualize(xs, x0, log_steps):
+    import numpy as np
+
+    fig, axs = plt.subplots(nrows = xs.shape[0], ncols=xs.shape[1] + 1, squeeze=False, figsize = (30, 20))
+    for j, batch in enumerate(xs):
+        img = torchvision.transforms.functional.to_pil_image(x0[j])
+        axs[j, 0].imshow(np.asarray(img))
+        axs[j, 0].set_title(f"True image")
+        axs[j, 0].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+        for i, img in enumerate(batch):
+            img = img.detach()
+            img = torchvision.transforms.functional.to_pil_image(img)
+            axs[j, i + 1].imshow(np.asarray(img))
+            axs[j, i + 1].set_title(f"Time = {log_steps[i]}")
+            axs[j, i + 1].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
     return fig
 
 def save_imgs(xs, log_steps, path_to_save, velocity_dict):
@@ -160,8 +178,8 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
     if path_to_save is not None:
         save_imgs(xs, log_steps, path_to_save, velocity_dict)
 
-    figure = visualize(xs, x0, log_steps)
-
+    figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
+    
     return figure
     
 
@@ -200,10 +218,10 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
         if it % 5 == 0:
             writer.add_scalar(it, 'loss', loss.detach())
 
-        if it % 10 == 0: # 0, 0.5k, 3k, 6k 9k
+        if it % 10 == 0:
             net.eval()
             logger.info(f"Evaluation started: iter={it}")
-            figure = sampling(opt, it, val_dataloader, net, ema, scheduler, logger, writer)
+            figure = sampling(opt, val_dataloader, net, ema, scheduler)
             writer.add_figure(it, "log images", figure)
             net.train()
 

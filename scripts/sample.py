@@ -1,5 +1,6 @@
-from toysb import Logger, load_dataset, SBModel, Scheduler, load_from_ckpt, sampling
+from toysb import Logger, SB2D, Scheduler, load_from_ckpt, sampling
 from toysb.utils import create_symmetric_beta_schedule
+from toysb.datasets.dataset2d import load_dataset
 import argparse
 from torch.utils.data import DataLoader
 from pathlib import Path
@@ -34,7 +35,7 @@ def main(opt):
     logger.info("toySB sampling")
     val_dataset, dim = load_dataset(opt.path_to_dataset, logger)
 
-    net = SBModel(x_dim = dim)
+    net = SB2D(x_dim = dim)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
     net, ema = load_from_ckpt(net, opt, logger)
 

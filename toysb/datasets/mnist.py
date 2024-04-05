@@ -1,6 +1,7 @@
 from torchvision import datasets
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+import torch as th
 
 def build_train_transform():
     return transforms.Compose([
@@ -39,6 +40,8 @@ def get_pair_dataset(opt, logger, corruption_func, train: bool = True):
         
         def __getitem__(self, index):
             img, label = self.hr_dataset[index]
-            return img, corruption_func(img)
+            if img.shape[0] == 1: img = th.stack([img, img, img], dim = 1).squeeze(0)
+            corrupt_image = corruption_func(img.unsqueeze(0)).squeeze(0)
+            return img, corrupt_image
 
     return PairDataset()

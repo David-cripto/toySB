@@ -3,7 +3,6 @@ from .utils import compute_gaussian_product_coef, unsqueeze_xdim
 from functools import partial
 import torch
 from tqdm import tqdm
-import deis.th_deis as deis
 
 class Scheduler():
     def __init__(self, betas, device):
@@ -86,6 +85,7 @@ class Scheduler():
         return stack_bwd_traj(xs), stack_bwd_traj(pred_x0s)
     
     def exp_sampling(self, steps, pred_eps_fn, x1, log_steps=None, ab_order = 0):
+        import deis.th_deis as deis
         import jax.numpy as jnp
 
         xt = x1.detach().to(self.device)

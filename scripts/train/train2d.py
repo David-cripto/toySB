@@ -1,7 +1,8 @@
-from toysb import train, get_pair_dataset, SBModel, Scheduler, Logger
+from toysb import train, SB2D, Scheduler, Logger
 import argparse
 from torch.utils.data import DataLoader
 from pathlib import Path
+from toysb.datasets.dataset2d import get_pair_dataset
 from toysb.utils import create_symmetric_beta_schedule
 import os
 
@@ -43,7 +44,7 @@ def main(opt):
     logger.info("toySB training")
     train_pair_dataset, dim = get_pair_dataset(opt.n_samples, opt.dataset1, opt.dataset2, logger, path_to_save=opt.path_to_save, regime = "train")
     val_pair_dataset, dim = get_pair_dataset(opt.val_log, opt.dataset1, opt.dataset2, logger, path_to_save=opt.path_to_save, regime = "val")
-    net = SBModel(x_dim = dim)
+    net = SB2D(x_dim = dim)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
     train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle = True)
     val_dataloader = DataLoader(val_pair_dataset, opt.val_log)
