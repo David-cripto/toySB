@@ -234,3 +234,6 @@ def save_gif(path_to_imgs, path_to_save, range_list):
     path_to_imgs = Path(path_to_imgs)
     images = [imageio.imread(str(path_to_imgs / f"{i}.png")) for i in range_list]
     imageio.mimsave(path_to_save, images)
+
+def expand_to_planes(input, shape):
+    return input[..., None, None].repeat([1, 1, shape[2], shape[3]])

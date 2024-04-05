@@ -2,7 +2,7 @@ from sklearn import datasets
 import torch as th
 from torch.utils.data import Dataset
 from pathlib import Path
-from .logger import Logger
+from ..logger import Logger
 
 PathLike = Path | str
 
