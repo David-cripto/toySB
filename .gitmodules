@@ -1,3 +1,7 @@
 [submodule "deis"]
 	path = deis
 	url = https://github.com/David-cripto/deis
+
+[submodule "I2SB"]
+	path = I2SB
+	url = https://github.com/NVlabs/I2SB
