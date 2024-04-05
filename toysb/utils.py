@@ -122,7 +122,7 @@ def visualize(xs, x0, log_steps):
             axs[j, i + 1].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
     return fig
 
-def save_imgs(xs, log_steps, path_to_save, velocity_dict):
+def save_imgs2d(xs, log_steps, path_to_save, velocity_dict):
     colors = list(range(len(xs)))
 
     path_to_save = Path(path_to_save)
@@ -143,6 +143,20 @@ def save_imgs(xs, log_steps, path_to_save, velocity_dict):
         plt.xlim(*IMAGE_CONSTANTS["x_range"])
         plt.ylim(*IMAGE_CONSTANTS["y_range"])
         plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
+
+def save_imgs(xs, log_steps, path_to_save):
+    path_to_save = Path(path_to_save)
+    for ind, batch in enumerate(xs):
+        path_to_dir = path_to_save / f"{ind}"
+        path_to_dir.mkdir(exist_ok=True)
+
+        for num_timestep, image in enumerate(batch):
+            plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
+            plt.imshow(torchvision.transforms.functional.to_pil_image(image))
+            plt.axis("off")
+            plt.title(f"Time = {log_steps[num_timestep]}")
+            plt.savefig(str(path_to_dir / f"{log_steps[num_timestep]}.png"))
+
 
 @th.no_grad()
 def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
@@ -176,7 +190,11 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
             velocity_dict["Exponential integrator velocity"] = {"vel" : exp_int_xs[:, :-1, :] - exp_int_xs[:, 1:, :], "color" : "#CA6F1E"}
 
     if path_to_save is not None:
-        save_imgs(xs, log_steps, path_to_save, velocity_dict)
+        if len(xs.shape) <= 3:
+            save_imgs2d(xs, log_steps, path_to_save, velocity_dict)
+        else:
+            save_imgs(xs, log_steps, path_to_save)
+    
 
     figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
     
@@ -252,6 +270,9 @@ def save_gif(path_to_imgs, path_to_save, range_list):
     path_to_imgs = Path(path_to_imgs)
     images = [imageio.imread(str(path_to_imgs / f"{i}.png")) for i in range_list]
     imageio.mimsave(path_to_save, images)
+
+def build_range_list(path):
+    return sorted([int(p.name.split(".")[0]) for p in path.glob("*")], reverse = True)
 
 def expand_to_planes(input, shape):
     return input[..., None, None].repeat([1, 1, shape[2], shape[3]])

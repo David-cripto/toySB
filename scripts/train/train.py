@@ -40,6 +40,9 @@ def create_arguments():
     os.makedirs(opt.log_dir, exist_ok=True)
     os.makedirs(opt.ckpt_path, exist_ok=True)
 
+    opt.vel = False
+    opt.exp_int_vel = False
+
     return opt
 
 def main(opt):

@@ -21,7 +21,7 @@ def create_arguments():
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--ema", type=float, default=0.99)
-    parser.add_argument("--ab_order", type=int, default=0)
+    parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
 
     opt = parser.parse_args()
 
