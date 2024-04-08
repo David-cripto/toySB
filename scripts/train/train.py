@@ -1,4 +1,4 @@
-from toysb import train, Scheduler, Logger, Unet
+from toysb import train, Scheduler, Logger, Unet, get_model
 from toysb.datasets.dataset import get_pair_dataset
 import argparse
 from torch.utils.data import DataLoader
@@ -54,7 +54,7 @@ def main(opt):
     corruption_func = build_sr4x(opt, logger, "bicubic", opt.image_size)
     train_pair_dataset = get_pair_dataset(opt, logger, corruption_func, train=True)
     val_pair_dataset = get_pair_dataset(opt, logger, corruption_func, train=False)
-    net = Unet(c_in = opt.c_in)
+    net = get_model(image_size = opt.image_size, in_channels = opt.c_in, num_channels = 64, num_res_blocks = 5)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
     train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle = True)
     val_dataloader = DataLoader(val_pair_dataset, opt.val_log)

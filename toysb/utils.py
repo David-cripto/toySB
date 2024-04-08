@@ -6,6 +6,7 @@ import os
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
 from pathlib import Path
+import numpy as np
 import torchvision
 
 IMAGE_CONSTANTS = {
@@ -106,17 +107,15 @@ def visualize2d(xs, x0, log_steps):
     return fig
 
 def visualize(xs, x0, log_steps):
-    import numpy as np
-
     fig, axs = plt.subplots(nrows = xs.shape[0], ncols=xs.shape[1] + 1, squeeze=False, figsize = (30, 20))
     for j, batch in enumerate(xs):
-        img = torchvision.transforms.functional.to_pil_image((x0[j] + 1)/2)
+        img = torchvision.transforms.functional.to_pil_image((th.clamp(x0[j], -1., 1.) + 1)/2)
         axs[j, 0].imshow(np.asarray(img))
         axs[j, 0].set_title(f"True image")
         axs[j, 0].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
         for i, img in enumerate(batch):
             img = img.detach()
-            img = torchvision.transforms.functional.to_pil_image((img + 1)/2)
+            img = torchvision.transforms.functional.to_pil_image((th.clamp(img, -1., 1.) + 1)/2)
             axs[j, i + 1].imshow(np.asarray(img))
             axs[j, i + 1].set_title(f"Time = {log_steps[i]}")
             axs[j, i + 1].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
@@ -152,7 +151,7 @@ def save_imgs(xs, log_steps, path_to_save):
 
         for num_timestep, image in enumerate(batch):
             plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
-            plt.imshow(torchvision.transforms.functional.to_pil_image((image + 1)/2))
+            plt.imshow(np.asarray(torchvision.transforms.functional.to_pil_image((th.clamp(image, -1., 1.) + 1)/2)))
             plt.axis("off")
             plt.title(f"Time = {log_steps[num_timestep]}")
             plt.savefig(str(path_to_dir / f"{log_steps[num_timestep]}.png"))

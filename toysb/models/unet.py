@@ -1,4 +1,5 @@
 from torch import nn
+from I2SB.guided_diffusion.script_util import create_model
 import torch as th
 from toysb.utils import expand_to_planes
 import math
@@ -80,3 +81,6 @@ class Unet(nn.Module):
     def forward(self, input, log_snrs):
         timestep_embed = expand_to_planes(self.timestep_embed(log_snrs[:, None]), input.shape)
         return self.net(th.cat([input, timestep_embed], dim=1))
+
+def get_model(*args, **kwargs):
+    return create_model(*args, **kwargs)
