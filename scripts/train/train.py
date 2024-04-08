@@ -1,5 +1,5 @@
 from toysb import train, Scheduler, Logger, Unet
-from toysb.datasets.mnist import get_pair_dataset
+from toysb.datasets.dataset import get_pair_dataset
 import argparse
 from torch.utils.data import DataLoader
 from pathlib import Path
@@ -33,6 +33,9 @@ def create_arguments():
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE model")
     parser.add_argument("--vel", action="store_true", help="draw velocity of motion")
     parser.add_argument("--exp_int_vel", action="store_true", help="draw exponential integrator velocity of motion")
+    parser.add_argument("--nfe", type=int, default=20, help="number of function evaluations")
+    parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
+    parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
 
     opt = parser.parse_args()
 

@@ -144,7 +144,7 @@ class Scheduler():
             ab_order= ab_order, # greater than 0, used for "rho_ab", "t_ab" algorithms, other algorithms will ignore the arg
             rk_method="3kutta" # used for "rho_rk" algorithms, other algorithms will ignore the arg
         )
-        xs = sampler_fn(xt)
+        xs = sampler_fn(xt, log_steps)
         stack_bwd_traj = lambda z: torch.flip(torch.stack(z, dim=1), dims=(1,))
         return stack_bwd_traj(xs), None
 

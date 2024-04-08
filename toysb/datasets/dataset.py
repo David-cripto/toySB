@@ -23,6 +23,9 @@ def get_dataset(name_dataset, *args, **kwargs):
         dataset = datasets.MNIST(*args, **kwargs)
     elif name_dataset == "emnist":
         dataset = datasets.EMNIST(*args, **kwargs)
+    elif name_dataset == "cifar10":
+        dataset = datasets.CIFAR10(*args, **kwargs)
+        
     return dataset
 
 

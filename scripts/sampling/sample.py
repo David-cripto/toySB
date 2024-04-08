@@ -4,7 +4,7 @@ import argparse
 from torch.utils.data import DataLoader
 from pathlib import Path
 import os
-from toysb.datasets.mnist import get_pair_dataset
+from toysb.datasets.dataset import get_pair_dataset
 from I2SB.corruption.superresolution import build_sr4x
 
 def create_arguments():
@@ -25,7 +25,7 @@ def create_arguments():
     parser.add_argument("--c_in", type=int, default=3, help="in channels")
     parser.add_argument("--val_log", type=int, default=10, help="number of points to log from validation dataset")
     parser.add_argument("--image_size", type=int, default=28, help="image size")
-    parser.add_argument("--nfe", type=int, default=20, help="number of fucntion evaluations")
+    parser.add_argument("--nfe", type=int, default=20, help="number of function evaluations")
 
     opt = parser.parse_args()
 

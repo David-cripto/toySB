@@ -110,7 +110,7 @@ def visualize(xs, x0, log_steps):
 
     fig, axs = plt.subplots(nrows = xs.shape[0], ncols=xs.shape[1] + 1, squeeze=False, figsize = (30, 20))
     for j, batch in enumerate(xs):
-        img = torchvision.transforms.functional.to_pil_image(x0[j])
+        img = torchvision.transforms.functional.to_pil_image((x0[j] + 1)/2)
         axs[j, 0].imshow(np.asarray(img))
         axs[j, 0].set_title(f"True image")
         axs[j, 0].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
