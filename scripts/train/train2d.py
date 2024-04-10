@@ -29,7 +29,10 @@ def create_arguments():
     parser.add_argument("--T", type=float, default=1., help="end time in network parametrization")
     parser.add_argument("--log_count", type=int, default=5, help="number of steps to log")
     parser.add_argument("--val_log", type=int, default=100, help="number of points to log from validation dataset")
+    parser.add_argument("--ddpm", action="store_true", help="use DDPM")
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE model")
+    parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
+    parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
 
     opt = parser.parse_args()
 
