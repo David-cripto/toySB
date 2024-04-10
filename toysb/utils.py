@@ -218,7 +218,7 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
             optimizer.zero_grad()
             x0, x1 = x0.detach().to(opt.device), x1.detach().to(opt.device)
             step = th.randint(0, opt.num_steps, (x0.shape[0],))
-            xt = scheduler.q_sample(step, x0, x1)
+            xt = scheduler.q_sample(step, x0, x1, ot_ode = opt.ot_ode)
             eps_true = scheduler.compute_label(step, x0, xt)
             eps_pred = net(xt, noise_levels[step].detach())
 
