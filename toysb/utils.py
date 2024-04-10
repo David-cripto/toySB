@@ -283,3 +283,18 @@ def build_range_list(path):
 
 def expand_to_planes(input, shape):
     return input[..., None, None].repeat([1, 1, shape[2], shape[3]])
+
+def frames_to_video(resulting_video_path, frames_path, fps = 5):
+    import cv2
+    frames_path = Path(frames_path)
+    img_shape = cv2.imread(str(frames_path / '0.png')).shape
+    
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    print("Original fourcc: ", fourcc)
+    video = cv2.VideoWriter(resulting_video_path, fourcc, fps, (img_shape[1], img_shape[0]))
+    
+    for img_name in build_range_list(frames_path):
+        img = cv2.imread(frames_path / img_name)
+        video.write(img)
+
+    video.release()
