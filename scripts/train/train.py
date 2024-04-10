@@ -30,12 +30,11 @@ def create_arguments():
     parser.add_argument("--T", type=float, default=1., help="end time in network parametrization")
     parser.add_argument("--log_count", type=int, default=5, help="number of steps to log")
     parser.add_argument("--val_log", type=int, default=10, help="number of points to log from validation dataset")
+    parser.add_argument("--ddpm", action="store_true", help="use DDPM")
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE model")
-    parser.add_argument("--vel", action="store_true", help="draw velocity of motion")
-    parser.add_argument("--exp_int_vel", action="store_true", help="draw exponential integrator velocity of motion")
-    parser.add_argument("--nfe", type=int, default=20, help="number of function evaluations")
     parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
     parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
+    parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
 
     opt = parser.parse_args()
 
@@ -49,6 +48,7 @@ def create_arguments():
     return opt
 
 def main(opt):
+    assert sum([opt.ddpm, opt.ot_ode, opt.exp_int]) == 1, "Should be only one regime of sampling during training"
     logger = Logger(opt.log_dir)
     logger.info("toySB training")
     corruption_func = build_sr4x(opt, logger, "bicubic", opt.image_size)

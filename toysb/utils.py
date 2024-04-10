@@ -121,27 +121,26 @@ def visualize(xs, x0, log_steps):
             axs[j, i + 1].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
     return fig
 
-def save_imgs2d(xs, log_steps, path_to_save, velocity_dict):
-    colors = list(range(len(xs)))
-
+def save_imgs2d(log_steps, path_to_save, draw_dict):
     path_to_save = Path(path_to_save)
 
-    for ind in range(xs.shape[1]):
+    for ind in range(len(log_steps)):
         plt.figure(figsize = IMAGE_CONSTANTS["figsize"])
-        points_t = xs[:, ind, :]
-        plt.scatter(points_t[:, 0], points_t[:, 1], c = colors)
-        plt.title(f"Points at time {log_steps[ind]}")
-        if ind != 0:
-            for name, vel in velocity_dict.items():
-                plt.quiver(points_t[:, 0], points_t[:, 1], vel["vel"][:, ind - 1, 0], vel["vel"][:, ind - 1, 1], 
-                           angles='xy', scale_units='xy', scale=IMAGE_CONSTANTS["scale"], 
-                           label = name, width =IMAGE_CONSTANTS["width"], color = vel["color"],
-                           alpha = 0.3)
-        
-        plt.legend()
-        plt.xlim(*IMAGE_CONSTANTS["x_range"])
-        plt.ylim(*IMAGE_CONSTANTS["y_range"])
-        plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
+        for name, vals in draw_dict.items():
+            xs = vals["log_steps"]
+            points_t = xs[:, ind, :]
+            plt.scatter(points_t[:, 0], points_t[:, 1], c = vals["color"], label = name)
+            plt.title(f"Points at time {log_steps[ind]}")
+            if ind != 0:
+                plt.quiver(points_t[:, 0], points_t[:, 1], vals["vel"][:, ind - 1, 0], vals["vel"][:, ind - 1, 1], 
+                        angles='xy', scale_units='xy', scale=IMAGE_CONSTANTS["scale"], 
+                        label = name, width =IMAGE_CONSTANTS["width"], color = vals["color"],
+                        alpha = 0.3)
+            
+            plt.legend()
+            plt.xlim(*IMAGE_CONSTANTS["x_range"])
+            plt.ylim(*IMAGE_CONSTANTS["y_range"])
+            plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
 
 def save_imgs(xs, log_steps, path_to_save):
     path_to_save = Path(path_to_save)
@@ -195,11 +194,11 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
                 out = net(xt, step)
                 return compute_pred_x0(step, xt, out, scheduler)
             xs, pred_x0 = scheduler.ddpm_sampling(steps, pred_x0_fn, x1, ot_ode=False, log_steps=log_steps, verbose=True)
-            draw_dict["DDPM"] = {"log_steps" : xs, "vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#BB8FCE"}
+            draw_dict["DDPM"] = {"log_steps" : xs, "vel" : xs[:, :-1, :] - xs[:, 1:, :], "color" : "#B03A2E"}
         
     if path_to_save is not None:
         if len(xs.shape) <= 3:
-            save_imgs2d(xs, log_steps, path_to_save, draw_dict)
+            save_imgs2d(log_steps, path_to_save, draw_dict)
         else:
             save_imgs(xs, log_steps, path_to_save)
     

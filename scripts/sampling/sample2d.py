@@ -14,14 +14,14 @@ def create_arguments():
     parser.add_argument("--ckpt_path", type=Path, default="", help="path to load checkpoints")
     parser.add_argument("--log_count", type=int, default=5, help="number of steps to log")
     parser.add_argument("--gpu", type=int, default=None, help="choose a particular device")
-    parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE model")
-    parser.add_argument("--vel", action="store_true", help="draw velocity of motion")
-    parser.add_argument("--ot_vel", action="store_true", help="draw ot_ode velocity of motion")
-    parser.add_argument("--exp_int_vel", action="store_true", help="draw exponential integrator velocity of motion")
+    parser.add_argument("--ddpm", action="store_true", help="use DDPM")
+    parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE")
+    parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--ema", type=float, default=0.99)
     parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
+    parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
 
     opt = parser.parse_args()
 
