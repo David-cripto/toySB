@@ -294,7 +294,7 @@ def frames_to_video(resulting_video_path, frames_path, fps = 5):
     video = cv2.VideoWriter(resulting_video_path, fourcc, fps, (img_shape[1], img_shape[0]))
     
     for img_name in build_range_list(frames_path):
-        img = cv2.imread(frames_path / img_name)
+        img = cv2.imread(str(frames_path / f"{img_name}.png"))
         video.write(img)
 
     video.release()
