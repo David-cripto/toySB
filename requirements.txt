@@ -6,3 +6,4 @@ diffusers
 tqdm
 jax
 torch-ema
+taming-transformers
