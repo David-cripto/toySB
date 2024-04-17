@@ -460,3 +460,11 @@ class VQ_F4_Decoder(nn.Module):
         quant = self.post_quant_conv(quant)
         dec = self.decoder(quant)
         return dec
+
+def load_encoder_decoder(path_to_ckpt, device):
+    encoder = VQ_F4_Encoder().to(device)
+    decoder = VQ_F4_Decoder().to(device)
+    state_dict = torch.load(path_to_ckpt)['state_dict']
+    encoder.load_state_dict(state_dict, strict=False)
+    decoder.load_state_dict(state_dict, strict=False)
+    return encoder, decoder
