@@ -461,10 +461,16 @@ class VQ_F4_Decoder(nn.Module):
         dec = self.decoder(quant)
         return dec
 
+def freeze_params(model):
+    for param in model.parameters():
+        param.requires_grad = False
+    model.eval()
+
 def load_encoder_decoder(path_to_ckpt, device):
     encoder = VQ_F4_Encoder().to(device)
     decoder = VQ_F4_Decoder().to(device)
     state_dict = torch.load(path_to_ckpt)['state_dict']
     encoder.load_state_dict(state_dict, strict=False)
     decoder.load_state_dict(state_dict, strict=False)
+    freeze_params(encoder), freeze_params(decoder)
     return encoder, decoder
