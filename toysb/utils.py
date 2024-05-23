@@ -206,7 +206,7 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None):
     
     try: #FIXME Do union argparser for sample and train, and put in in  separate file (i.e. utils)
         if opt.save_raw_data:
-            th.save({"xs": xs, "x0": x0}, path_to_save / 'raw_data.pt')
+            th.save({"xs": xs, "x0": x0}, path_to_save / '../raw_data.pt')
     except AttributeError:
         pass
 

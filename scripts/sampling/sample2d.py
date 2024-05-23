@@ -43,7 +43,7 @@ def main(opt):
     val_dataloader = DataLoader(val_dataset, len(val_dataset))
     
     experiment_name = Path(opt.ckpt_path).parts[-2]
-    path_to_save = Path(opt.path_to_save) / experiment_name / Path(opt.ckpt_path).stem
+    path_to_save = Path(opt.path_to_save) / experiment_name / Path(opt.ckpt_path).stem / 'images'
     path_to_save.mkdir(parents=True, exist_ok=True)
     sampling(opt, val_dataloader, net, ema, scheduler, path_to_save)
 
