@@ -142,6 +142,7 @@ def save_imgs2d(log_steps, path_to_save, draw_dict):
             plt.xlim(*IMAGE_CONSTANTS["x_range"])
             plt.ylim(*IMAGE_CONSTANTS["y_range"])
             plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
+        plt.close()
 
 def save_imgs(xs, log_steps, path_to_save):
     path_to_save = Path(path_to_save)
