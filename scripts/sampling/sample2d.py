@@ -22,6 +22,7 @@ def create_arguments():
     parser.add_argument("--ema", type=float, default=0.99)
     parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
     parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
+    parser.add_argument("--save_raw_data", action="store_true", help="save raw data (not only plots)")
 
     opt = parser.parse_args()
 
@@ -41,7 +42,10 @@ def main(opt):
 
     val_dataloader = DataLoader(val_dataset, len(val_dataset))
     
-    sampling(opt, val_dataloader, net, ema, scheduler, opt.path_to_save)
+    experiment_name = Path(opt.ckpt_path).parts[-2]
+    path_to_save = Path(opt.path_to_save) / experiment_name / Path(opt.ckpt_path).stem
+    path_to_save.mkdir(parents=True, exist_ok=True)
+    sampling(opt, val_dataloader, net, ema, scheduler, path_to_save)
 
     logger.info("Finish!")
 

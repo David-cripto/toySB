@@ -158,7 +158,7 @@ def save_imgs(xs, log_steps, path_to_save):
 
 
 @th.no_grad()
-def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None, return_raw_data=False):
+def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None):
     steps = space_indices(opt.num_steps, opt.nfe)
     log_steps = [steps[i] for i in space_indices(len(steps), opt.log_count)]
 
@@ -203,10 +203,11 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None, return
         else:
             save_imgs(xs, log_steps, path_to_save)
     
+    if opt.save_raw_data:
+        th.save({"xs": xs, "x0": x0}, path_to_save / 'raw_data.pt')
 
     figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
-    if return_raw_data:
-        return figure, (xs, x0)
+    
     return figure
     
 
