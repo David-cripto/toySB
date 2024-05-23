@@ -44,8 +44,8 @@ def create_arguments():
 
     opt.device='cuda' if opt.gpu is None else f'cuda:{opt.gpu}'
     os.makedirs(opt.log_dir, exist_ok=True)
-    os.makedirs(opt.ckpt_path, exist_ok=True)
-
+    # os.makedirs(opt.ckpt_path, exist_ok=True) checkpoint path = log path with name of opt.name
+    (Path(opt.log_dir) / opt.name).mkdir(parents=True, exist_ok=True)
     return opt
 
 def main(opt):

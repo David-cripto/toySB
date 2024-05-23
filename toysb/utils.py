@@ -203,8 +203,11 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None):
         else:
             save_imgs(xs, log_steps, path_to_save)
     
-    if opt.save_raw_data:
-        th.save({"xs": xs, "x0": x0}, path_to_save / 'raw_data.pt')
+    try: #FIXME Do union argparser for sample and train, and put in in  separate file (i.e. utils)
+        if opt.save_raw_data:
+            th.save({"xs": xs, "x0": x0}, path_to_save / 'raw_data.pt')
+    except AttributeError:
+        pass
 
     figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
     
@@ -257,20 +260,20 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
             th.save({
                         "net": net.state_dict(), # save only necessary params for load_from_ckpt
                         "ema": ema.state_dict(),
-                    }, opt.ckpt_path / f"step={it:04d}_loss={loss.item():.2f}.pt")
-        logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
+                    }, opt.log_dir / opt.name / f"step={it:04d}_loss={loss.item():.2f}.pt")
+        logger.info(f"Saved latest({it=}) checkpoint to {(opt.log_dir / opt.name)=}!")
     # save last
     th.save({
         "net": net.state_dict(),
         "ema": ema.state_dict(),
         "optimizer": optimizer.state_dict(),
         "sched": sched.state_dict() if sched is not None else sched,
-        }, opt.ckpt_path / f"step=last_loss={loss.item():.2f}.pt")
-    logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
+        }, opt.log_dir / opt.name / f"step=last_loss={loss.item():.2f}.pt")
+    logger.info(f"Saved latest({it=}) checkpoint to {(opt.log_dir / opt.name)=}!")
     writer.close()
 
 def load_from_ckpt(net, opt, logger):
-    checkpoint = th.load(opt.ckpt_path, map_location="cpu")
+    checkpoint = th.load(opt.ckpt_path, map_location="cpu") #FIXME possible bug with ckpt_path
     net.load_state_dict(checkpoint['net'])
     logger.info(f"[Net] Loaded network ckpt: {opt.ckpt_path}!")
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
