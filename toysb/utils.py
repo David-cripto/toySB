@@ -157,7 +157,7 @@ def save_imgs(xs, log_steps, path_to_save):
 
 
 @th.no_grad()
-def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
+def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None, return_raw_data=False):
     steps = space_indices(opt.num_steps, opt.nfe)
     log_steps = [steps[i] for i in space_indices(len(steps), opt.log_count)]
 
@@ -204,7 +204,8 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
     
 
     figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
-    
+    if return_raw_data:
+        return figure, (xs, x0)
     return figure
     
 
@@ -250,13 +251,20 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
             writer.add_figure(it, "log images", figure)
             net.train()
 
-        th.save({
-                    "net": net.state_dict(),
-                    "ema": ema.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "sched": sched.state_dict() if sched is not None else sched,
-                }, opt.ckpt_path / "latest.pt")
+        if (opt.ckpt_every != 0) and (it % opt.ckpt_every == 0):
+            th.save({
+                        "net": net.state_dict(), # save only necessary params for load_from_ckpt
+                        "ema": ema.state_dict(),
+                    }, opt.ckpt_path / f"step={it:04d}_loss={loss.item():.2f}.pt")
         logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
+    # save last
+    th.save({
+        "net": net.state_dict(),
+        "ema": ema.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "sched": sched.state_dict() if sched is not None else sched,
+        }, opt.ckpt_path / f"step=last_loss={loss.item():.2f}.pt")
+    logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
     writer.close()
 
 def load_from_ckpt(net, opt, logger):

@@ -15,6 +15,7 @@ def create_arguments():
     parser.add_argument("--path_to_save", type=Path, default="", help="path to save data")
     parser.add_argument("--log-dir", type=Path, default=".log", help="path to log std outputs and writer data")
     parser.add_argument("--ckpt_path", type=Path, default="", help="path to save checkpoints")
+    parser.add_argument("--ckpt_every", type=int, default=0, help="period of checkpointing; 0 - save only last")
     parser.add_argument("--gpu", type=int, default=None, help="choose a particular device")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--num_epoch", type=int, default=100, help="number of epochs")
