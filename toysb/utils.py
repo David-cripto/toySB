@@ -9,6 +9,7 @@ import torchvision
 from torch.optim import AdamW, lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 from torch_ema import ExponentialMovingAverage
+from tqdm import tqdm
 
 IMAGE_CONSTANTS = {
     "scale":1,
@@ -214,7 +215,6 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None):
     
     return figure
     
-
 def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     writer = TensorBoardWriter(opt)
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
@@ -228,7 +228,7 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     net.train()
     
     for it in range(opt.num_epoch):
-        for x0, x1 in train_dataloader:
+        for x0, x1 in tqdm(train_dataloader, disable=not opt.verbose):
             optimizer.zero_grad()
             x0, x1 = x0.detach().to(opt.device), x1.detach().to(opt.device)
             step = th.randint(0, opt.num_steps, (x0.shape[0],))
