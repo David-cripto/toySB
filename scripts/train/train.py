@@ -5,11 +5,13 @@ from torch.utils.data import DataLoader
 from pathlib import Path
 from toysb.utils import create_symmetric_beta_schedule
 import os
+from datetime import datetime
 from I2SB.corruption.superresolution import build_sr4x
 
 def create_arguments():
+    now = datetime.now().strftime("%y-%m-%d %H:%M:%S")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default=None, help="experiment ID")
+    parser.add_argument("--name", type=str, default=now, help="experiment ID")
     parser.add_argument("--dataset1", type=str, help="name of the target dataset")
     parser.add_argument("--dataset2", type=str, help="name of the initial dataset", default=None)
     parser.add_argument("--root", type=Path, default="", help="path to save data")
@@ -43,7 +45,7 @@ def create_arguments():
 
     opt.device='cuda' if opt.gpu is None else f'cuda:{opt.gpu}'
     os.makedirs(opt.log_dir, exist_ok=True)
-    os.makedirs(opt.ckpt_path, exist_ok=True)
+    (Path(opt.log_dir) / opt.name).mkdir(parents=True, exist_ok=True)
 
     opt.vel = False
     opt.exp_int_vel = False
@@ -59,7 +61,7 @@ def main(opt):
     net = get_model(image_size = opt.image_size, in_channels = opt.c_in, num_channels = 64, num_res_blocks = 5)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
     train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle = True)
-    val_dataloader = DataLoader(val_pair_dataset, opt.val_log)
+    val_dataloader = DataLoader(val_pair_dataset, opt.val_log, shuffle = True)
     train(opt, net, scheduler, train_dataloader, val_dataloader, logger)
 
     logger.info("Finish!")
