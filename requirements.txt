@@ -7,3 +7,4 @@ tqdm
 jax
 torch-ema
 taming-transformers
+lmdb
