@@ -10,15 +10,17 @@ from I2SB.corruption.superresolution import build_sr4x
 def create_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default=None, help="experiment ID")
-    parser.add_argument("--dataset", type=str, help="name of the dataset")
+    parser.add_argument("--dataset1", type=str, help="name of the target dataset")
+    parser.add_argument("--dataset2", type=str, help="name of the initial dataset", default=None)
     parser.add_argument("--root", type=Path, default="", help="path to save data")
     parser.add_argument("--log-dir", type=Path, default=".log", help="path to log std outputs and writer data")
     parser.add_argument("--ckpt_path", type=Path, default="", help="path to save checkpoints")
+    parser.add_argument("--ckpt_every", type=int, default=0, help="period of checkpointing; 0 - save only last")
     parser.add_argument("--gpu", type=int, default=None, help="choose a particular device")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--num_epoch", type=int, default=100, help="number of epochs")
     parser.add_argument("--image_size", type=int, default=28, help="image size")
-    parser.add_argument("--c_in", type=int, default=3, help="in channels")
+    parser.add_argument("--c_in", type=int, default=3, help="in channels") # TODO better to set 3 and forget about this
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=5e-5, help="learning rate")
@@ -35,6 +37,7 @@ def create_arguments():
     parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
     parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
     parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
+    parser.add_argument("--verbose", action="store_true", help="verbosity level (bool)")
 
     opt = parser.parse_args()
 
@@ -48,12 +51,11 @@ def create_arguments():
     return opt
 
 def main(opt):
-    assert sum([opt.ddpm, opt.ot_ode, opt.exp_int]) == 1, "Should be only one regime of sampling during training"
+    assert sum([opt.ddpm, opt.ot_ode]) == 1, "Should be only one regime of sampling during training"
     logger = Logger(opt.log_dir)
     logger.info("toySB training")
-    corruption_func = build_sr4x(opt, logger, "bicubic", opt.image_size)
-    train_pair_dataset = get_pair_dataset(opt, logger, corruption_func, train=True)
-    val_pair_dataset = get_pair_dataset(opt, logger, corruption_func, train=False)
+    train_pair_dataset = get_pair_dataset(opt, logger, train=True)
+    val_pair_dataset = get_pair_dataset(opt, logger, train=False)
     net = get_model(image_size = opt.image_size, in_channels = opt.c_in, num_channels = 64, num_res_blocks = 5)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
     train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle = True)
