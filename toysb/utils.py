@@ -274,7 +274,7 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     writer.close()
 
 def load_from_ckpt(net, opt, logger):
-    checkpoint = th.load(opt.ckpt_path, map_location="cpu") #FIXME possible bug with ckpt_path
+    checkpoint = th.load(opt.ckpt_path, map_location="cpu")
     net.load_state_dict(checkpoint['net'])
     logger.info(f"[Net] Loaded network ckpt: {opt.ckpt_path}!")
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
