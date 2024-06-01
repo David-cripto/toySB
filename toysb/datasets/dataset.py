@@ -73,7 +73,9 @@ def get_pair_dataset(opt, logger, train: bool = True): #TODO Don't understand wh
                     start_idxs = np.where(np.array(self.start_dataset.targets) == idx_s)[0].tolist()
                     self.target2start.update(dict(zip(target_idxs, start_idxs)))
 
-                self.raw_idx = list(self.target2start.keys())
+                self.raw_idx = np.array(list(self.target2start.keys()))
+                np.random.seed(42)
+                np.random.shuffle(self.raw_idx)
             else:
                 self.corruption_func = build_sr4x(opt, logger, "bicubic", opt.image_size)
 
