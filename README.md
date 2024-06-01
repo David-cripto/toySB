@@ -7,7 +7,7 @@ Schrodinger Bridge realization for toy datasets
 git clone https://github.com/David-cripto/toySB.git
 cd toySB
 git submodule update --init --recursive
-pip install -e .
+pip install .
 ```
 
 
