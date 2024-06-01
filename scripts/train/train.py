@@ -22,7 +22,7 @@ def create_arguments():
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--num_epoch", type=int, default=100, help="number of epochs")
     parser.add_argument("--image_size", type=int, default=28, help="image size")
-    parser.add_argument("--c_in", type=int, default=3, help="in channels") # TODO better to set 3 and forget about this
+    parser.add_argument("--c_in", type=int, default=3, help="in channels")
     parser.add_argument("--beta_max", type=float, default=0.3, help="max diffusion")
     parser.add_argument("--batch_size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=5e-5, help="learning rate")
@@ -45,7 +45,7 @@ def create_arguments():
 
     opt.device='cuda' if opt.gpu is None else f'cuda:{opt.gpu}'
     os.makedirs(opt.log_dir, exist_ok=True)
-    (Path(opt.log_dir) / opt.name).mkdir(parents=True, exist_ok=True)
+    (Path(opt.ckpt_path) / opt.name).mkdir(parents=True, exist_ok=True)
 
     opt.vel = False
     opt.exp_int_vel = False
@@ -60,7 +60,7 @@ def main(opt):
     val_pair_dataset = get_pair_dataset(opt, logger, train=False)
     net = get_model(image_size = opt.image_size, in_channels = opt.c_in, num_channels = 64, num_res_blocks = 5)
     scheduler = Scheduler(create_symmetric_beta_schedule(n_timestep=opt.num_steps, linear_end=opt.beta_max / opt.num_steps), opt.device)
-    train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle = True)
+    train_dataloader = DataLoader(train_pair_dataset, opt.batch_size, shuffle=True)
     val_dataloader = DataLoader(val_pair_dataset, opt.val_log)
     train(opt, net, scheduler, train_dataloader, val_dataloader, logger)
 

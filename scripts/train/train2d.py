@@ -36,13 +36,15 @@ def create_arguments():
     parser.add_argument("--val_log", type=int, default=100, help="number of points to log from validation dataset")
     parser.add_argument("--ddpm", action="store_true", help="use DDPM")
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE")
+    parser.add_argument("--exp_int", action="store_true", help="use OT-ODE")
     parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
+    parser.add_argument("--verbose", action="store_true", help="verbosity level (bool)")
 
     opt = parser.parse_args()
 
     opt.device='cuda' if opt.gpu is None else f'cuda:{opt.gpu}'
     os.makedirs(opt.log_dir, exist_ok=True)
-    (Path(opt.log_dir) / opt.name).mkdir(parents=True, exist_ok=True)
+    (Path(opt.ckpt_path) / opt.name).mkdir(parents=True, exist_ok=True)
     return opt
 
 def main(opt):

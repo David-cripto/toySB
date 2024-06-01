@@ -157,6 +157,7 @@ def save_imgs(xs, log_steps, path_to_save):
             plt.axis("off")
             plt.title(f"Time = {log_steps[num_timestep]}")
             plt.savefig(str(path_to_dir / f"{log_steps[num_timestep]}.png"))
+            plt.close()
 
 
 @th.no_grad()
@@ -250,7 +251,7 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
         if it % 5 == 0:
             writer.add_scalar(it, 'loss', loss.detach())
 
-        if it % 10 == 0:
+        if it % (opt.ckpt_every if opt.ckpt_every else 10) == 0:
             net.eval()
             logger.info(f"Evaluation started: iter={it}")
             figure = sampling(opt, val_dataloader, net, ema, scheduler)
@@ -261,16 +262,16 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
             th.save({
                         "net": net.state_dict(), # save only necessary params for load_from_ckpt
                         "ema": ema.state_dict(),
-                    }, opt.log_dir / opt.name / f"step={it:04d}_loss={loss.item():.2f}.pt")
-        logger.info(f"Saved latest({it=}) checkpoint to {(opt.log_dir / opt.name)=}!")
+                    }, opt.ckpt_path / opt.name / f"step={it:04d}_loss={loss.item():.2f}.pt")
+        logger.info(f"Saved latest({it=}) checkpoint to {(opt.ckpt_path / opt.name)=}!")
     # save last
     th.save({
         "net": net.state_dict(),
         "ema": ema.state_dict(),
         "optimizer": optimizer.state_dict(),
         "sched": sched.state_dict() if sched is not None else sched,
-        }, opt.log_dir / opt.name / f"step=last_loss={loss.item():.2f}.pt")
-    logger.info(f"Saved latest({it=}) checkpoint to {(opt.log_dir / opt.name)=}!")
+        }, opt.ckpt_path / opt.name / f"step=last_loss={loss.item():.2f}.pt")
+    logger.info(f"Saved latest({it=}) checkpoint to {(opt.ckpt_path / opt.name)=}!")
     writer.close()
 
 def load_from_ckpt(net, opt, logger):
