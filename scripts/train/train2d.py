@@ -1,20 +1,25 @@
-from toysb import train, SB2D, Scheduler, Logger
 import argparse
-from torch.utils.data import DataLoader
+import os
+from datetime import datetime
 from pathlib import Path
+
+from torch.utils.data import DataLoader
+from toysb import SB2D, Logger, Scheduler, train
 from toysb.datasets.dataset2d import get_pair_dataset
 from toysb.utils import create_symmetric_beta_schedule
-import os
+
 
 def create_arguments():
+    now = datetime.now().strftime("%y-%m-%d %H:%M:%S")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--name", type=str, default=None, help="experiment ID")
+    parser.add_argument("--name", type=str, default=now, help="experiment ID")
     parser.add_argument("--dataset1", type=str, help="name for initial dataset")
     parser.add_argument("--dataset2", type=str, help="name for terminal dataset")
     parser.add_argument("--n_samples", type=int, default=10**4, help="number of samples for each dataset")
     parser.add_argument("--path_to_save", type=Path, default="", help="path to save data")
     parser.add_argument("--log-dir", type=Path, default=".log", help="path to log std outputs and writer data")
     parser.add_argument("--ckpt_path", type=Path, default="", help="path to save checkpoints")
+    parser.add_argument("--ckpt_every", type=int, default=0, help="period of checkpointing; 0 - save only last")
     parser.add_argument("--gpu", type=int, default=None, help="choose a particular device")
     parser.add_argument("--num_steps", type=int, default=1000, help="number of steps")
     parser.add_argument("--num_epoch", type=int, default=100, help="number of epochs")
@@ -31,20 +36,19 @@ def create_arguments():
     parser.add_argument("--val_log", type=int, default=100, help="number of points to log from validation dataset")
     parser.add_argument("--ddpm", action="store_true", help="use DDPM")
     parser.add_argument("--ot_ode", action="store_true", help="use OT-ODE")
-    parser.add_argument("--exp_int", action="store_true", help="use Exponential Integrator")
+    parser.add_argument("--exp_int", action="store_true", help="use OT-ODE")
     parser.add_argument("--nfe", type=int, default=1000, help="number of function evaluations")
-    parser.add_argument("--ab_order", type=int, default=0, help="order of polynom in Exponential Integrator")
+    parser.add_argument("--verbose", action="store_true", help="verbosity level (bool)")
 
     opt = parser.parse_args()
 
     opt.device='cuda' if opt.gpu is None else f'cuda:{opt.gpu}'
     os.makedirs(opt.log_dir, exist_ok=True)
-    os.makedirs(opt.ckpt_path, exist_ok=True)
-
+    (Path(opt.ckpt_path) / opt.name).mkdir(parents=True, exist_ok=True)
     return opt
 
 def main(opt):
-    assert sum([opt.ddpm, opt.ot_ode, opt.exp_int]) == 1, "Should be only one regime of sampling during training"
+    assert sum([opt.ddpm, opt.ot_ode]) == 1, "Should be only one regime of sampling during training"
     logger = Logger(opt.log_dir)
     logger.info("toySB training")
     train_pair_dataset, dim = get_pair_dataset(opt.n_samples, opt.dataset1, opt.dataset2, logger, path_to_save=opt.path_to_save, regime = "train")

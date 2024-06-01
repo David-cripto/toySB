@@ -1,13 +1,15 @@
-import torch as th
-from torch.optim import AdamW, lr_scheduler
-import torch.nn.functional as F
-from torch_ema import ExponentialMovingAverage
 import os
-from torch.utils.tensorboard import SummaryWriter
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
+import torch as th
+import torch.nn.functional as F
 import torchvision
+from torch.optim import AdamW, lr_scheduler
+from torch.utils.tensorboard import SummaryWriter
+from torch_ema import ExponentialMovingAverage
+from tqdm import tqdm
 
 IMAGE_CONSTANTS = {
     "scale":1,
@@ -141,6 +143,7 @@ def save_imgs2d(log_steps, path_to_save, draw_dict):
             plt.xlim(*IMAGE_CONSTANTS["x_range"])
             plt.ylim(*IMAGE_CONSTANTS["y_range"])
             plt.savefig(str(path_to_save / f"{log_steps[ind]}.png"))
+        plt.close()
 
 def save_imgs(xs, log_steps, path_to_save):
     path_to_save = Path(path_to_save)
@@ -154,10 +157,11 @@ def save_imgs(xs, log_steps, path_to_save):
             plt.axis("off")
             plt.title(f"Time = {log_steps[num_timestep]}")
             plt.savefig(str(path_to_dir / f"{log_steps[num_timestep]}.png"))
+            plt.close()
 
 
 @th.no_grad()
-def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
+def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save=None):
     steps = space_indices(opt.num_steps, opt.nfe)
     log_steps = [steps[i] for i in space_indices(len(steps), opt.log_count)]
 
@@ -202,12 +206,16 @@ def sampling(opt, val_dataloader, net, ema, scheduler, path_to_save = None):
         else:
             save_imgs(xs, log_steps, path_to_save)
     
+    try: #FIXME Do union argparser for sample and train, and put in in  separate file (i.e. utils)
+        if opt.save_raw_data:
+            th.save({"xs": xs, "x0": x0}, path_to_save / '../raw_data.pt')
+    except AttributeError:
+        pass
 
     figure = visualize2d(xs, x0, log_steps) if len(xs.shape) <= 3 else visualize(xs, x0, log_steps)
     
     return figure
     
-
 def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     writer = TensorBoardWriter(opt)
     ema = ExponentialMovingAverage(net.parameters(), decay=opt.ema)
@@ -221,7 +229,7 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
     net.train()
     
     for it in range(opt.num_epoch):
-        for x0, x1 in train_dataloader:
+        for x0, x1 in tqdm(train_dataloader, disable=not opt.verbose):
             optimizer.zero_grad()
             x0, x1 = x0.detach().to(opt.device), x1.detach().to(opt.device)
             step = th.randint(0, opt.num_steps, (x0.shape[0],))
@@ -243,20 +251,27 @@ def train(opt, net, scheduler, train_dataloader, val_dataloader, logger):
         if it % 5 == 0:
             writer.add_scalar(it, 'loss', loss.detach())
 
-        if it % 10 == 0:
+        if it % (opt.ckpt_every if opt.ckpt_every else 10) == 0:
             net.eval()
             logger.info(f"Evaluation started: iter={it}")
             figure = sampling(opt, val_dataloader, net, ema, scheduler)
             writer.add_figure(it, "log images", figure)
             net.train()
 
-        th.save({
-                    "net": net.state_dict(),
-                    "ema": ema.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "sched": sched.state_dict() if sched is not None else sched,
-                }, opt.ckpt_path / "latest.pt")
-        logger.info(f"Saved latest({it=}) checkpoint to {opt.ckpt_path=}!")
+        if (opt.ckpt_every != 0) and (it % opt.ckpt_every == 0):
+            th.save({
+                        "net": net.state_dict(), # save only necessary params for load_from_ckpt
+                        "ema": ema.state_dict(),
+                    }, opt.ckpt_path / opt.name / f"step={it:04d}_loss={loss.item():.2f}.pt")
+        logger.info(f"Saved latest({it=}) checkpoint to {(opt.ckpt_path / opt.name)=}!")
+    # save last
+    th.save({
+        "net": net.state_dict(),
+        "ema": ema.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "sched": sched.state_dict() if sched is not None else sched,
+        }, opt.ckpt_path / opt.name / f"step=last_loss={loss.item():.2f}.pt")
+    logger.info(f"Saved latest({it=}) checkpoint to {(opt.ckpt_path / opt.name)=}!")
     writer.close()
 
 def load_from_ckpt(net, opt, logger):
