@@ -23,6 +23,7 @@ class Scheduler():
         self.std_sb  = to_torch(std_sb).to(device)
         self.mu_x0 = to_torch(mu_x0).to(device)
         self.mu_x1 = to_torch(mu_x1).to(device)
+        self.num_timesteps = len(betas)
 
     def get_std_fwd(self, step, xdim=None):
         std_fwd = self.std_fwd[step]
@@ -75,6 +76,32 @@ class Scheduler():
             assert prev_step < step, f"{prev_step=}, {step=}"
 
             pred_x0 = pred_x0_fn(xt, step)
+            xt = self.p_posterior(prev_step, step, xt, pred_x0, ot_ode=ot_ode)
+
+            if prev_step in log_steps:
+                pred_x0s.append(pred_x0.detach().cpu())
+                xs.append(xt.detach().cpu())
+
+        stack_bwd_traj = lambda z: torch.flip(torch.stack(z, dim=1), dims=(1,))
+        return stack_bwd_traj(xs), stack_bwd_traj(pred_x0s)
+
+    def ddgan_sampling(self, steps, pred_x0_fn, x1, ot_ode=False, log_steps=None, verbose=True):
+        xt = x1.detach().to(self.device)
+
+        xs = [xt.cpu()]
+        pred_x0s = []
+
+        log_steps = log_steps or steps
+        assert steps[0] == log_steps[0] == 0
+
+        steps = torch.flip(steps, dims=(0,))
+
+        pair_steps = zip(steps[1:], steps[:-1])
+        pair_steps = tqdm(pair_steps, desc='DDGAN sampling', total=len(steps)-1) if verbose else pair_steps
+        for prev_step, step in pair_steps:
+            assert prev_step < step, f"{prev_step=}, {step=}"
+
+            pred_x0 = pred_x0_fn(xt, prev_step)
             xt = self.p_posterior(prev_step, step, xt, pred_x0, ot_ode=ot_ode)
 
             if prev_step in log_steps:

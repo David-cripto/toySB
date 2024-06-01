@@ -8,3 +8,4 @@ jax==0.4.28
 torch-ema==0.3
 taming-transformers==0.0.1
 ipdb==0.13.13
+lmdb
